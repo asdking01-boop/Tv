@@ -1,0 +1,33 @@
+Build an IPTV app similar to Netflix, named "KRAS TV".
+
+LOGIN SCREEN
+- Fields: Username, Password, Server URL
+- The app connects to the server (Xtream Codes API) and automatically loads all movies, series, and live TV channels.
+
+MAIN NAVIGATION (4 icons)
+- Live TV
+- Movies
+- Series
+- Favorites
+
+FILTERS
+- Separate category filter for Live TV
+- Separate category filter for Movies
+- Separate category filter for Series
+
+QUALITY INFO
+- Show the resolution/quality (SD / HD / FHD / 4K) on every movie and series card.
+
+REFRESH
+- A refresh icon that updates the server data: movies, series, and live channels.
+
+PLAYBACK
+- Full support for playing movies, series (seasons and episodes), and live TV.
+- Use hls.js for .m3u8 streams and support MP4.
+
+DESIGN
+- Netflix-style dark UI.
+- App icon: black background with a red letter "K".
+- App name: KRAS TV.
+
+Everything must be fully working and connected to the server I enter at login.
