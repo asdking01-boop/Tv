@@ -15,13 +15,13 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: '20'
 
-      - name: Set up Java 21
+      - name: Set up Java 17
         uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
-          java-version: '21'
+          java-version: '17'
 
       - name: Create App Code and Generate Android Project
         run: |
@@ -179,102 +179,4 @@ jobs:
                 const q = document.getElementById('search-inp').value.toLowerCase();
                 let list = currentTab === 'fav' ? db.fav : (db[currentTab].items || []);
                 if (currentTab !== 'fav' && cat !== 'all') list = list.filter(i => i.category_id == cat);
-                if (q) list = list.filter(i => (i.name || i.title || '').toLowerCase().includes(q));
-                grid.innerHTML = list.slice(0, 150).map(item => {
-                  const id = item.stream_id || item.series_id;
-                  const name = item.name || item.title || 'بدون اسم';
-                  const img = item.stream_icon || item.cover || '';
-                  const type = item._type || currentTab;
-                  const quality = detectQuality(name);
-                  const isFav = db.fav.some(f => (f.stream_id || f.series_id) == id);
-                  return `<div class="card" onclick='handleItemClick(${JSON.stringify({id, name, type, ext: item.container_extension || "mp4"}).replace(/'/g, "&apos;")})'>
-                    ${(type === 'movies' || type === 'series') ? `<span class="badge-q">${quality}</span>` : ''}
-                    <button class="fav-btn ${isFav ? 'active' : ''}" onclick='toggleFav(event, ${JSON.stringify({...item, _type: type}).replace(/'/g, "&apos;")})'>★</button>
-                    <img src="${img}" onerror="this.src='https://via.placeholder.com/150x220/111/E50914?text=KRAS+TV'">
-                    <div class="card-title">${name}</div>
-                  </div>`;
-                }).join('');
-              }
-              function toggleFav(e, item) {
-                e.stopPropagation();
-                const id = item.stream_id || item.series_id;
-                const idx = db.fav.findIndex(f => (f.stream_id || f.series_id) == id);
-                if (idx > -1) db.fav.splice(idx, 1); else db.fav.push(item);
-                localStorage.setItem('kras_fav', JSON.stringify(db.fav));
-                renderGrid();
-              }
-              async function handleItemClick(item) {
-                if (item.type === 'live') playStream(`${creds.srv}/live/${creds.usr}/${creds.pwd}/${item.id}.m3u8`, item.name);
-                else if (item.type === 'movies') playStream(`${creds.srv}/movie/${creds.usr}/${creds.pwd}/${item.id}.${item.ext}`, item.name);
-                else if (item.type === 'series') openSeries(item.id, item.name);
-              }
-              async function openSeries(seriesId, title) {
-                const modal = document.getElementById('series-modal');
-                const list = document.getElementById('episodes-list');
-                document.getElementById('series-title').innerText = title;
-                list.innerHTML = 'جاري جلب الحلقات...';
-                modal.style.display = 'flex';
-                try {
-                  const data = await apiCall(`get_series_info&series_id=${seriesId}`);
-                  const episodes = data.episodes || {};
-                  let html = '';
-                  for (const season in episodes) {
-                    html += `<h3 style="margin:12px 0 6px;color:var(--red);">الموسم ${season}</h3>`;
-                    episodes[season].forEach(ep => {
-                      const ext = ep.container_extension || 'mp4';
-                      const url = `${creds.srv}/series/${creds.usr}/${creds.pwd}/${ep.id}.${ext}`;
-                      html += `<div class="ep-item" onclick="playStream('${url}', '${ep.title || ('حلقة ' + ep.episode_num)}')"><span>الحلقة ${ep.episode_num}: ${ep.title || ''}</span><span>▶ تشغيل</span></div>`;
-                    });
-                  }
-                  list.innerHTML = html || 'لا توجد حلقات';
-                } catch (e) { list.innerHTML = 'تعذر تحميل الحلقات'; }
-              }
-              function playStream(url, title) {
-                document.getElementById('player-modal').style.display = 'flex';
-                document.getElementById('player-title').innerText = title;
-                const video = document.getElementById('video-player');
-                if (hls) { hls.destroy(); hls = null; }
-                if (url.endsWith('.m3u8') && Hls.isSupported()) {
-                  hls = new Hls(); hls.loadSource(url); hls.attachMedia(video);
-                  hls.on(Hls.Events.MANIFEST_PARSED, () => video.play());
-                } else { video.src = url; video.play(); }
-              }
-              function closePlayer() {
-                const video = document.getElementById('video-player');
-                video.pause(); video.src = '';
-                if (hls) { hls.destroy(); hls = null; }
-                document.getElementById('player-modal').style.display = 'none';
-              }
-            </script>
-          </body>
-          </html>
-          EOF
-
-          npm init -y
-          npm install @capacitor/core@6 @capacitor/cli@6 @capacitor/android@6
-          npx cap init "KRAS TV" "com.krastv.app" --web-dir www
-          npx cap add android
-
-          sed -i 's/<application/<application android:usesCleartextTraffic="true"/g' android/app/src/main/AndroidManifest.xml
-
-          sudo apt-get update && sudo apt-get install -y imagemagick
-          convert -size 512x512 xc:black -fill "#E50914" -gravity center -pointsize 360 -font DejaVu-Sans-Bold -annotate +0+0 "K" icon.png
-          for dir in android/app/src/main/res/mipmap-*; do
-            if [ -d "$dir" ]; then
-              cp icon.png "$dir/ic_launcher.png" 2>/dev/null || true
-              cp icon.png "$dir/ic_launcher_round.png" 2>/dev/null || true
-              cp icon.png "$dir/ic_launcher_foreground.png" 2>/dev/null || true
-            fi
-          done
-
-      - name: Build Debug APK
-        run: |
-          cd android
-          chmod +x gradlew
-          ./gradlew assembleDebug
-
-      - name: Upload KRAS TV APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: KRAS-TV-APK
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+                if
