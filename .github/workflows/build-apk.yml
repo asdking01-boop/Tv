@@ -9,28 +9,36 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Java
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Set up Java 17
         uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
           java-version: '17'
 
-      - name: Set up Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          channel: 'stable'
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
 
-      - name: Install dependencies
-        run: flutter pub get
-
-      - name: Build APK
-        run: flutter build apk --release
-
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: kras-tv-release
-          path: build/app/outputs/flutter-apk/app-release.apk
+      - name: Create App Code and Generate Android Project
+        run: |
+          mkdir -p www
+          cat << 'EOF' > www/index.html
+          <!DOCTYPE html>
+          <html lang="ar" dir="rtl">
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+            <title>KRAS TV</title>
+            <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+            <style>
+              :root { --red: #E50914; --bg: #141414; --card: #1f1f1f; --text: #ffffff; }
+              * { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; user-select: none; }
+              body { background: var(--bg); color: var(--text); overflow-x: hidden; }
+              #login-screen { display: flex; flex-direction: column; align-items: center; justify-content: center;
