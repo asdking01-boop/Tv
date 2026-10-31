@@ -1,33 +1,36 @@
-Build an IPTV app similar to Netflix, named "KRAS TV".
+name: Build KRAS TV APK
 
-LOGIN SCREEN
-- Fields: Username, Password, Server URL
-- The app connects to the server (Xtream Codes API) and automatically loads all movies, series, and live TV channels.
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
 
-MAIN NAVIGATION (4 icons)
-- Live TV
-- Movies
-- Series
-- Favorites
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-FILTERS
-- Separate category filter for Live TV
-- Separate category filter for Movies
-- Separate category filter for Series
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
 
-QUALITY INFO
-- Show the resolution/quality (SD / HD / FHD / 4K) on every movie and series card.
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
 
-REFRESH
-- A refresh icon that updates the server data: movies, series, and live channels.
+      - name: Install dependencies
+        run: flutter pub get
 
-PLAYBACK
-- Full support for playing movies, series (seasons and episodes), and live TV.
-- Use hls.js for .m3u8 streams and support MP4.
+      - name: Build APK
+        run: flutter build apk --release
 
-DESIGN
-- Netflix-style dark UI.
-- App icon: black background with a red letter "K".
-- App name: KRAS TV.
-
-Everything must be fully working and connected to the server I enter at login.
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: kras-tv-release
+          path: build/app/outputs/flutter-apk/app-release.apk
